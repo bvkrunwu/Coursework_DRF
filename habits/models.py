@@ -1,6 +1,5 @@
 from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.core.exceptions import ValidationError
 from django.db import models
 
 User = get_user_model()
@@ -104,44 +103,3 @@ class Habit(models.Model):
             str: Название привычки.
         """
         return self.action
-
-    def clean(self):
-        """
-        Выполняет валидацию модели перед сохранением.
-
-        Проверяет соблюдение бизнес-правил:
-        - Приятная привычка не может иметь награду или быть связанной с другой привычкой.
-        - Полезная привычка не может иметь и награду, и связанную приятную привычку одновременно.
-        - Время выполнения не должно превышать 120 секунд.
-        - Частота выполнения не может быть реже 1 раза в 7 дней.
-        - Связанная привычка должна быть помечена как приятная.
-
-        Исключения:
-            ValidationError: Если нарушены любые из вышеуказанных правил.
-        """
-        super().clean()
-        if self.user and self.owner and self.user != self.owner:
-            raise ValidationError("Создатель привычки и её владелец должны совпадать.")
-
-        # 1. Нельзя одновременно указывать и связанную приятную привычку, и вознаграждение.
-        if self.linked_habit and self.reward:
-            raise ValidationError(
-                "Выберите что-то одно: либо связанную приятную привычку, либо текстовое вознаграждение."
-            )
-
-        # 2. Время выполнения должно быть не больше 120 секунд.
-        if self.duration_seconds > 120:
-            raise ValidationError("Время на выполнение привычки не должно превышать 120 секунд")
-
-        # 3. В связанные привычки могут попадать только привычки с признаком приятной привычки.
-        linked_habit = self.linked_habit
-        if linked_habit and not linked_habit.is_pleasant:
-            raise ValidationError("Связанная привычка должна быть приятной")
-
-        # 4. Ограничения для приятной привычки
-        if self.is_pleasant and (self.reward or self.linked_habit):
-            raise ValidationError("У приятной привычки не может быть вознаграждения или связанной привычки")
-
-        # 5. Частота выполнения не может быть реже 1 раза в 7 дней.
-        if self.frequency_days > 7:
-            raise ValidationError("Периодичность выполнения не может быть реже одного раза в неделю.")
