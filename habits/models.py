@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -19,7 +20,16 @@ class Habit(models.Model):
         on_delete=models.CASCADE,
         verbose_name="Пользователь",
         help_text="Пользователь создавший привычку",
-        related_name="habits",
+        related_name="created_habits",
+    )
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        verbose_name="Владелец",
+        blank=True,
+        null=True,
+        help_text="Пользователь, обладающий правами на управление этой привычкой",
+        related_name="owned_habits",
     )
     action = models.CharField(
         max_length=255, verbose_name="Действие", help_text="Краткое описание действия, которое вы будете выполнять"
@@ -110,6 +120,8 @@ class Habit(models.Model):
             ValidationError: Если нарушены любые из вышеуказанных правил.
         """
         super().clean()
+        if self.user and self.owner and self.user != self.owner:
+            raise ValidationError("Создатель привычки и её владелец должны совпадать.")
 
         # 1. Нельзя одновременно указывать и связанную приятную привычку, и вознаграждение.
         if self.linked_habit and self.reward:
