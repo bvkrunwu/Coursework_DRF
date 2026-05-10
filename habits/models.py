@@ -83,6 +83,9 @@ class Habit(models.Model):
         help_text="Опубликовать привычку в общий доступ для других пользователей",
     )
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата создания")
+    tg_chat_id = models.CharField(
+        max_length=50, verbose_name="Телеграм chat-id", blank=True, null=True, help_text="Укажите телеграм chat-id"
+    )
 
     class Meta:
         """
