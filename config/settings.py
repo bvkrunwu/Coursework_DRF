@@ -23,6 +23,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "rest_framework",
     "rest_framework_simplejwt",
+    "django_celery_beat",
     "corsheaders",
     "users",
     "habits",
@@ -65,11 +66,6 @@ REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.IsAuthenticated",
     ],
-}
-
-SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=45),
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
 }
 
 DATABASES = {
@@ -126,6 +122,11 @@ CORS_ALLOW_ALL_ORIGINS = False
 
 AUTH_USER_MODEL = "users.User"
 
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=45),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
+}
+
 CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL")
 
 CELERY_RESULT_BACKEND = os.getenv("CELERY_RESULT_BACKEND")
@@ -135,3 +136,15 @@ CELERY_TIMEZONE = TIME_ZONE
 CELERY_TASK_TRACK_STARTED = True
 
 CELERY_TASK_TIME_LIMIT = 30 * 60
+
+CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
+
+CELERY_BEAT_SCHEDULE = {
+    "send-habit-notifications-every-minute": {
+        "task": "habits.tasks.send_habit_notifications",
+        "schedule": 60.0,
+    },
+}
+
+TG_URL = os.getenv("TG_URL")
+TG_TOKEN = os.getenv("TG_TOKEN")
